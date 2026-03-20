@@ -1,0 +1,14 @@
+# Python bytecode/cache
+__pycache__/
+*.py[cod]
+
+# Pytest/Coverage artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+
+# Virtual environments
+.venv/
+venv/
+ENV/
