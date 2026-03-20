@@ -1,6 +1,6 @@
-import sys
-from moneypoly.config import STARTING_BALANCE, BOARD_SIZE, GO_SALARY, JAIL_POSITION
-
+"""Module defining the Player class,
+ which represents a single player in the Monopoly game."""
+from config import STARTING_BALANCE, BOARD_SIZE, GO_SALARY, JAIL_POSITION
 
 class Player:
     """Represents a single player in a MoneyPoly game."""
@@ -10,10 +10,12 @@ class Player:
         self.balance = balance
         self.position = 0
         self.properties = []
-        self.in_jail = False
-        self.jail_turns = 0
-        self.get_out_of_jail_cards = 0
         self.is_eliminated = False
+        self.jail={
+            "in_jail": False,
+            "turns": 0,
+            "get_out_of_jail_cards": 0
+        }
 
 
     def add_money(self, amount):
@@ -42,7 +44,6 @@ class Player:
         Awards the Go salary if the player passes or lands on Go.
         Returns the new board position.
         """
-        old_position = self.position
         self.position = (self.position + steps) % BOARD_SIZE
 
         if self.position == 0:
@@ -54,8 +55,8 @@ class Player:
     def go_to_jail(self):
         """Send this player directly to the Jail square."""
         self.position = JAIL_POSITION
-        self.in_jail = True
-        self.jail_turns = 0
+        self.jail["in_jail"] = True
+        self.jail["turns"] = 0
 
 
     def add_property(self, prop):
@@ -75,7 +76,7 @@ class Player:
 
     def status_line(self):
         """Return a concise one-line status string for this player."""
-        jail_tag = " [JAILED]" if self.in_jail else ""
+        jail_tag = " [JAILED]" if self.jail["in_jail"] else ""
         return (
             f"{self.name}: ${self.balance}  "
             f"pos={self.position}  "
@@ -85,3 +86,4 @@ class Player:
 
     def __repr__(self):
         return f"Player({self.name!r}, balance={self.balance}, pos={self.position})"
+    
