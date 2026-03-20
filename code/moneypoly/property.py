@@ -5,11 +5,26 @@ class Property:  # pylint: disable=too-many-instance-attributes
 
     FULL_GROUP_MULTIPLIER = 2
 
-    def __init__(self, config, group=None):
-        self.name = config["name"]
-        self.position = config["position"]
-        self.price = config["price"]
-        self.base_rent = config["base_rent"]
+    def __init__(self, config, position=None, price=None, base_rent=None, group=None):
+        """Create a Property.
+
+        Supports two construction styles:
+        - Dict config: Property({name, position, price, base_rent}, group)
+        - Positional fields: Property(name, position, price, base_rent, group)
+        """
+        if isinstance(config, dict):
+            cfg = config
+            if group is None and position is not None:
+                group = position
+            self.name = cfg["name"]
+            self.position = cfg["position"]
+            self.price = cfg["price"]
+            self.base_rent = cfg["base_rent"]
+        else:
+            self.name = config
+            self.position = position
+            self.price = price
+            self.base_rent = base_rent
 
         self.houses = 0
         self.owner = None
