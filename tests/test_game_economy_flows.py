@@ -91,6 +91,27 @@ def test_trade_transfers_cash_to_seller_and_property_to_buyer():
     assert prop in buyer.properties
 
 
+def test_trade_rejects_negative_cash_amount_without_mutation():
+    # Edge case: negative cash should never be allowed (it can mint money).
+    from conftest import StubPlayer, StubProperty
+
+    seller = StubPlayer("Seller", balance=10)
+    buyer = StubPlayer("Buyer", balance=10)
+    prop = StubProperty(name="P", price=50, owner=seller)
+    seller.add_property(prop)
+
+    g = _make_game_with_bank(players=[seller, buyer], bank=None)
+
+    ok = g.trade(seller, buyer, prop, cash_amount=-1)
+
+    assert ok is False
+    assert prop.owner == seller
+    assert prop in seller.properties
+    assert prop not in buyer.properties
+    assert seller.balance == 10
+    assert buyer.balance == 10
+
+
 def test_mortgage_property_pays_out_from_bank_funds():
     # Branch: mortgage_property success should reduce bank funds via pay_out.
     from conftest import StubPlayer
