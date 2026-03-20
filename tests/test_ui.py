@@ -93,3 +93,67 @@ def test_print_standings_sorts_by_net_worth_desc(monkeypatch):
     # Expect rank 1 is 'high'
     joined = "\n".join(lines)
     assert "1. high" in joined
+
+
+def test_print_banner_formats_header(monkeypatch):
+    lines = []
+    monkeypatch.setattr("builtins.print", lambda *a, **k: lines.append(" ".join(str(x) for x in a)))
+
+    ui.print_banner("TITLE")
+
+    joined = "\n".join(lines)
+    assert "TITLE" in joined
+    assert "=" in joined
+
+
+def test_print_player_card_no_jail_no_properties_branch(monkeypatch):
+    p = _StubPlayer()
+    p.in_jail = False
+    p.get_out_of_jail_cards = 0
+    p.properties = []
+
+    out = []
+    monkeypatch.setattr("builtins.print", lambda *a, **k: out.append(" ".join(str(x) for x in a)))
+
+    ui.print_player_card(p)
+
+    assert any("Properties: none" in line for line in out)
+    assert all("IN JAIL" not in line for line in out)
+
+
+def test_print_board_ownership_renders_owner_and_mortgage_flag(monkeypatch):
+    class _Owner:
+        def __init__(self, name):
+            self.name = name
+
+    class _Prop:
+        def __init__(self, *, position, name, price, rent, owner=None, mortgaged=False):
+            self.position = position
+            self.name = name
+            self.price = price
+            self._rent = rent
+            self.owner = owner
+            self.is_mortgaged = mortgaged
+
+        def get_rent(self):
+            return self._rent
+
+    class _Board:
+        def __init__(self, properties):
+            self.properties = properties
+
+    props = [
+        _Prop(position=1, name="P1", price=60, rent=2, owner=None, mortgaged=False),
+        _Prop(position=3, name="P2", price=60, rent=4, owner=_Owner("Alice"), mortgaged=True),
+    ]
+    b = _Board(props)
+
+    lines = []
+    monkeypatch.setattr("builtins.print", lambda *a, **k: lines.append(" ".join(str(x) for x in a)))
+
+    ui.print_board_ownership(b)
+
+    joined = "\n".join(lines)
+    assert "Property Register" in joined
+    assert "---" in joined  # unowned
+    assert "*Alice" in joined  # mortgaged flag + owner

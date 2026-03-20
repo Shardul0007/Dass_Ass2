@@ -21,3 +21,9 @@ def test_find_winner_returns_highest_net_worth_player():
     winner = g.find_winner()
 
     assert winner is p_high
+
+
+def test_find_winner_returns_none_when_no_players():
+    g = game.Game.__new__(game.Game)
+    g.players = []
+    assert g.find_winner() is None

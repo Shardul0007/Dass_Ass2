@@ -310,3 +310,207 @@ def test_handle_property_tile_unowned_auction_path(monkeypatch):
     g._handle_property_tile(player, prop)
 
     assert called["auction"] == 1
+
+
+def test_handle_jail_turn_declines_card_then_pays_fine(stub_ui, monkeypatch):
+    from conftest import StubBank, StubPlayer
+    from config import JAIL_FINE
+
+    player = StubPlayer("A", balance=100)
+    player.in_jail = True
+    player.get_out_of_jail_cards = 1
+    player.jail_turns = 0
+
+    bank = StubBank()
+    dice = _FakeDice(roll_value=4)
+    g = _make_game_with_stubs(players=[player], bank=bank, dice=dice)
+
+    # Decline using card, accept paying fine.
+    stub_ui.confirm_answers = [False, True]
+    monkeypatch.setattr(game, "ui", stub_ui)
+
+    moved = {}
+    monkeypatch.setattr(g, "_move_and_resolve", lambda _p, steps: moved.update({"steps": steps}))
+
+    g._handle_jail_turn(player)
+
+    assert bank.collected == JAIL_FINE
+    assert player.get_out_of_jail_cards == 1
+    assert player.in_jail is False
+    assert moved["steps"] == 4
+
+
+def test_menu_mortgage_invalid_index_does_not_call_mortgage(stub_ui, monkeypatch):
+    from conftest import StubBank, StubPlayer, StubProperty
+
+    player = StubPlayer("A")
+    prop = StubProperty(name="P")
+    player.add_property(prop)
+
+    bank = StubBank()
+    dice = _FakeDice()
+    g = _make_game_with_stubs(players=[player], bank=bank, dice=dice)
+
+    stub_ui.int_answers = [0]  # idx=-1
+    monkeypatch.setattr(game, "ui", stub_ui)
+
+    monkeypatch.setattr(
+        g,
+        "mortgage_property",
+        lambda *_a, **_k: (_ for _ in ()).throw(AssertionError("Should not mortgage")),
+    )
+
+    g._menu_mortgage(player)
+
+
+def test_menu_unmortgage_valid_selection_calls_unmortgage(stub_ui, monkeypatch):
+    from conftest import StubBank, StubPlayer, StubProperty
+
+    player = StubPlayer("A")
+    prop = StubProperty(name="P")
+    prop.is_mortgaged = True
+    player.add_property(prop)
+
+    bank = StubBank()
+    dice = _FakeDice()
+    g = _make_game_with_stubs(players=[player], bank=bank, dice=dice)
+
+    stub_ui.int_answers = [1]
+    monkeypatch.setattr(game, "ui", stub_ui)
+
+    called = {}
+    monkeypatch.setattr(g, "unmortgage_property", lambda p, pr: called.update({"p": p, "pr": pr}))
+
+    g._menu_unmortgage(player)
+
+    assert called["p"] == player
+    assert called["pr"] == prop
+
+
+def test_menu_unmortgage_invalid_index_does_not_call_unmortgage(stub_ui, monkeypatch):
+    from conftest import StubBank, StubPlayer, StubProperty
+
+    player = StubPlayer("A")
+    prop = StubProperty(name="P")
+    prop.is_mortgaged = True
+    player.add_property(prop)
+
+    bank = StubBank()
+    dice = _FakeDice()
+    g = _make_game_with_stubs(players=[player], bank=bank, dice=dice)
+
+    stub_ui.int_answers = [0]  # idx=-1
+    monkeypatch.setattr(game, "ui", stub_ui)
+
+    monkeypatch.setattr(
+        g,
+        "unmortgage_property",
+        lambda *_a, **_k: (_ for _ in ()).throw(AssertionError("Should not unmortgage")),
+    )
+
+    g._menu_unmortgage(player)
+
+
+def test_interactive_menu_loan_amount_zero_continues_to_next_choice(stub_ui, monkeypatch):
+    from conftest import StubBank, StubPlayer
+
+    player = StubPlayer("A")
+    other = StubPlayer("B")
+    bank = StubBank()
+    dice = _FakeDice()
+    g = _make_game_with_stubs(players=[player, other], bank=bank, dice=dice)
+
+    # 6 -> amount 0 (ignored) -> 1 standings -> 0 roll
+    stub_ui.int_answers = [6, 0, 1, 0]
+    monkeypatch.setattr(game, "ui", stub_ui)
+
+    called = {"loan": 0}
+    monkeypatch.setattr(bank, "give_loan", lambda *_a, **_k: called.__setitem__("loan", called["loan"] + 1), raising=False)
+
+    g.interactive_menu(player)
+
+    assert called["loan"] == 0
+    assert stub_ui.standings_calls == 1
+
+
+def test_interactive_menu_invalid_choice_is_ignored_and_loops(stub_ui, monkeypatch):
+    from conftest import StubBank, StubPlayer
+
+    player = StubPlayer("A")
+    other = StubPlayer("B")
+    bank = StubBank()
+    dice = _FakeDice()
+    g = _make_game_with_stubs(players=[player, other], bank=bank, dice=dice)
+
+    # 7 is an unhandled option; the menu should just loop again.
+    stub_ui.int_answers = [7, 0]
+    monkeypatch.setattr(game, "ui", stub_ui)
+
+    g.interactive_menu(player)
+
+
+def test_menu_trade_no_other_players_branch(stub_ui, monkeypatch):
+    from conftest import StubBank, StubPlayer
+
+    player = StubPlayer("A")
+    bank = StubBank()
+    dice = _FakeDice()
+    g = _make_game_with_stubs(players=[player], bank=bank, dice=dice)
+
+    monkeypatch.setattr(game, "ui", stub_ui)
+
+    g._menu_trade(player)
+
+
+def test_menu_trade_invalid_partner_index_returns(stub_ui, monkeypatch):
+    from conftest import StubBank, StubPlayer
+
+    player = StubPlayer("A")
+    other = StubPlayer("B")
+    bank = StubBank()
+    dice = _FakeDice()
+    g = _make_game_with_stubs(players=[player, other], bank=bank, dice=dice)
+
+    stub_ui.int_answers = [0]  # idx=-1
+    monkeypatch.setattr(game, "ui", stub_ui)
+
+    g._menu_trade(player)
+
+
+def test_menu_trade_no_properties_branch(stub_ui, monkeypatch):
+    from conftest import StubBank, StubPlayer
+
+    player = StubPlayer("A")
+    other = StubPlayer("B")
+    bank = StubBank()
+    dice = _FakeDice()
+    g = _make_game_with_stubs(players=[player, other], bank=bank, dice=dice)
+
+    stub_ui.int_answers = [1]
+    monkeypatch.setattr(game, "ui", stub_ui)
+
+    g._menu_trade(player)
+
+
+def test_menu_trade_invalid_property_index_returns(stub_ui, monkeypatch):
+    from conftest import StubBank, StubPlayer, StubProperty
+
+    player = StubPlayer("A")
+    other = StubPlayer("B")
+    player.add_property(StubProperty(name="P", owner=player))
+
+    bank = StubBank()
+    dice = _FakeDice()
+    g = _make_game_with_stubs(players=[player, other], bank=bank, dice=dice)
+
+    # Select partner=1, then invalid property selection 0 (idx=-1)
+    stub_ui.int_answers = [1, 0]
+    monkeypatch.setattr(game, "ui", stub_ui)
+
+    monkeypatch.setattr(
+        g,
+        "trade",
+        lambda *_a, **_k: (_ for _ in ()).throw(AssertionError("Should not trade")),
+    )
+
+    g._menu_trade(player)

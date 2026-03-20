@@ -77,6 +77,19 @@ def test_property_group_all_owned_by_requires_all_properties_owned_by_player():
     assert g.all_owned_by(owner) is True
 
 
+def test_property_group_all_owned_by_false_for_none_player_and_empty_group():
+    g = propmod.PropertyGroup("Empty", "e")
+    assert g.all_owned_by(None) is False
+    assert g.all_owned_by(_Owner("X")) is False
+
+
+def test_property_dict_constructor_with_explicit_group_kwarg():
+    g = propmod.PropertyGroup("Test", "t")
+    cfg = {"name": "A", "position": 1, "price": 10, "base_rent": 1}
+    p = propmod.Property(cfg, group=g)
+    assert p.group == g
+
+
 def test_property_get_rent_doubles_when_full_group_owned():
     g = propmod.PropertyGroup("Test", "t")
     p1 = propmod.Property({"name": "A", "position": 1, "price": 10, "base_rent": 5}, g)
@@ -93,6 +106,17 @@ def test_property_get_rent_zero_when_mortgaged():
     p1 = propmod.Property({"name": "A", "position": 1, "price": 10, "base_rent": 5}, g)
     p1.is_mortgaged = True
     assert p1.get_rent() == 0
+
+
+def test_property_get_rent_base_rent_when_group_not_fully_owned():
+    g = propmod.PropertyGroup("Test", "t")
+    p1 = propmod.Property({"name": "A", "position": 1, "price": 10, "base_rent": 5}, g)
+    p2 = propmod.Property({"name": "B", "position": 2, "price": 10, "base_rent": 5}, g)
+    owner = _Owner("X")
+    p1.owner = owner
+    p2.owner = None
+
+    assert p1.get_rent() == 5
 
 
 def test_property_mortgage_and_unmortgage_branches():
@@ -126,3 +150,58 @@ def test_property_is_available_false_when_owned_or_mortgaged():
     p1.owner = None
     p1.is_mortgaged = True
     assert p1.is_available() is False
+
+
+def test_board_is_special_tile_true_and_false():
+    b = board.Board()
+    assert b.is_special_tile(0) is True
+    assert b.is_special_tile(1) is False
+
+
+def test_board_owned_and_unowned_helpers_and_repr():
+    b = board.Board()
+    owner = _Owner("X")
+    p1 = b.get_property_at(1)
+    p2 = b.get_property_at(3)
+    assert p1 is not None and p2 is not None
+
+    p1.owner = owner
+    p2.owner = None
+
+    owned = b.properties_owned_by(owner)
+    assert p1 in owned
+    assert p2 not in owned
+
+    unowned = b.unowned_properties()
+    assert p2 in unowned
+    assert p1 not in unowned
+
+    assert "Board(" in repr(b)
+
+
+def test_property_positional_constructor_registers_group_and_repr():
+    g = propmod.PropertyGroup("Test", "t")
+    p = propmod.Property("Pos", 5, 100, 10, g)
+    assert p in g.properties
+    assert "Property(" in repr(p)
+
+
+def test_property_group_add_property_and_counts_and_repr():
+    g = propmod.PropertyGroup("Test", "t")
+    p1 = propmod.Property("A", 1, 10, 1, None)
+    p2 = propmod.Property("B", 2, 10, 1, None)
+    p3 = propmod.Property("C", 3, 10, 1, None)
+    owner = _Owner("X")
+    p1.owner = owner
+    p2.owner = owner
+    p3.owner = None
+
+    g.add_property(p1)
+    g.add_property(p2)
+    g.add_property(p1)  # duplicate add should be a no-op
+    g.add_property(p3)
+
+    counts = g.get_owner_counts()
+    assert counts.get(owner) == 2
+    assert g.size() == 3
+    assert "PropertyGroup(" in repr(g)

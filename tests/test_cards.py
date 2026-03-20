@@ -45,3 +45,32 @@ def test_card_deck_cards_remaining_counts_down_mod_len():
     assert d.cards_remaining() == 1
     d.draw()
     assert d.cards_remaining() == 3
+
+
+def test_card_deck_reshuffle_resets_index_and_calls_shuffle(monkeypatch):
+    c1 = {"description": "1", "action": "collect", "value": 1}
+    c2 = {"description": "2", "action": "collect", "value": 2}
+    d = cards.CardDeck([c1, c2])
+
+    d.draw()
+    assert d.index == 1
+
+    called = {"shuffle": 0}
+
+    def _fake_shuffle(_cards):
+        called["shuffle"] += 1
+
+    monkeypatch.setattr(cards.random, "shuffle", _fake_shuffle)
+
+    d.reshuffle()
+
+    assert called["shuffle"] == 1
+    assert d.index == 0
+
+
+def test_card_deck_len_and_repr():
+    c1 = {"description": "1", "action": "collect", "value": 1}
+    d = cards.CardDeck([c1])
+
+    assert len(d) == 1
+    assert "CardDeck(" in repr(d)

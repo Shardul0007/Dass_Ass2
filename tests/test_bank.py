@@ -77,3 +77,20 @@ def test_bank_give_loan_zero_does_nothing():
     assert p.balance == 0
     assert b.get_balance() == start_funds
     assert b.loan_count() == 0
+
+
+def test_bank_summary_and_repr_branches(monkeypatch):
+    b = bank.Bank()
+    b.collect(123)
+
+    lines = []
+    monkeypatch.setattr("builtins.print", lambda *a, **k: lines.append(" ".join(str(x) for x in a)))
+
+    b.summary()
+
+    joined = "\n".join(lines)
+    assert "Bank reserves" in joined
+    assert "Total collected" in joined
+    assert "Loans issued" in joined
+
+    assert "Bank(funds=" in repr(b)
