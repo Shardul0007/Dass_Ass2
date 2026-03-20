@@ -1,3 +1,4 @@
+"""Module containing configuration constants for the Monopoly game."""
 STARTING_BALANCE = 1500
 GO_SALARY = 200
 BOARD_SIZE = 40
