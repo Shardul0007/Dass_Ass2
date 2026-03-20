@@ -1,7 +1,7 @@
-import os
+"""Module defining the Game class, which manages 
+the overall state and flow of a MoneyPoly game session."""
 
-from moneypoly.config import (
-    GO_TO_JAIL_POSITION,
+from config import (
     JAIL_FINE,
     AUCTION_MIN_INCREMENT,
     INCOME_TAX_AMOUNT,
@@ -9,15 +9,14 @@ from moneypoly.config import (
     MAX_TURNS,
     GO_SALARY,
 )
-from moneypoly.player import Player
-from moneypoly.board import Board
-from moneypoly.bank import Bank
-from moneypoly.dice import Dice
-from moneypoly.cards import CardDeck, CHANCE_CARDS, COMMUNITY_CHEST_CARDS
-from moneypoly import ui
+from player import Player
+from board import Board
+from bank import Bank
+from dice import Dice
+from cards import CardDeck, CHANCE_CARDS, COMMUNITY_CHEST_CARDS
+import ui
 
-
-class Game:
+class Game:  # pylint: disable=too-many-instance-attributes
     """Manages the full state and flow of a MoneyPoly game session."""
 
     def __init__(self, player_names):
@@ -292,61 +291,72 @@ class Game:
             print(f"  {player.name} rolled: {self.dice.describe()}")
             self._move_and_resolve(player, roll)
 
+
     def _apply_card(self, player, card):
         """Apply the effect of a drawn Chance or Community Chest card."""
         if card is None:
             return
-        print(f"  Card drawn: \"{card['description']}\"")
+
+        print(f'  Card drawn: "{card["description"]}"')
+
         action = card["action"]
         value = card["value"]
 
-        if action == "collect":
+        def handle_collect():
             amount = self.bank.pay_out(value)
             player.add_money(amount)
 
-        elif action == "pay":
+        def handle_pay():
             player.deduct_money(value)
             self.bank.collect(value)
 
-        elif action == "jail":
+        def handle_jail():
             player.go_to_jail()
             print(f"  {player.name} has been sent to Jail!")
 
-        elif action == "jail_free":
+        def handle_jail_free():
             player.get_out_of_jail_cards += 1
             print(f"  {player.name} now holds a Get Out of Jail Free card.")
 
-        elif action == "move_to":
+        def handle_move_to():
             old_pos = player.position
             player.position = value
+
             if value < old_pos:
                 player.add_money(GO_SALARY)
                 print(f"  {player.name} passed Go and collected ${GO_SALARY}.")
+
             tile = self.board.get_tile_type(value)
             if tile == "property":
                 prop = self.board.get_property_at(value)
                 if prop:
                     self._handle_property_tile(player, prop)
 
-        elif action == "birthday":
+        def transfer_from_all():
             for other in self.players:
                 if other != player and other.balance >= value:
                     other.deduct_money(value)
                     player.add_money(value)
 
-        elif action == "collect_from_all":
-            for other in self.players:
-                if other != player and other.balance >= value:
-                    other.deduct_money(value)
-                    player.add_money(value)
+        action_map = {
+            "collect": handle_collect,
+            "pay": handle_pay,
+            "jail": handle_jail,
+            "jail_free": handle_jail_free,
+            "move_to": handle_move_to,
+            "birthday": transfer_from_all,
+            "collect_from_all": transfer_from_all,
+        }
 
+        handler = action_map.get(action)
+        if handler:
+            handler()
 
     def _check_bankruptcy(self, player):
         """Eliminate `player` from the game if they are bankrupt."""
         if player.is_bankrupt():
             print(f"\n  *** {player.name} is bankrupt and has been eliminated! ***")
             player.is_eliminated = True
-            # Release all properties back to the bank
             for prop in list(player.properties):
                 prop.owner = None
                 prop.is_mortgaged = False
@@ -378,7 +388,7 @@ class Game:
 
         winner = self.find_winner()
         if winner:
-            ui.print_banner(f"GAME OVER")
+            ui.print_banner("GAME OVER")
             print(f"\n  {winner.name} wins with a net worth of ${winner.net_worth()}!\n")
         else:
             print("\n  The game ended with no players remaining.")
@@ -401,7 +411,8 @@ class Game:
 
             if choice == 0:
                 break
-            elif choice == 1:
+
+            if choice == 1:
                 ui.print_standings(self.players)
             elif choice == 2:
                 ui.print_board_ownership(self.board)
@@ -450,7 +461,7 @@ class Game:
         for i, p in enumerate(others):
             print(f"  {i + 1}. {p.name}  (${p.balance})")
         idx = ui.safe_int_input("  Trade with: ", default=0) - 1
-        if not (0 <= idx < len(others)):
+        if not 0 <= idx < len(others):
             return
         partner = others[idx]
         if not player.properties:
@@ -459,7 +470,7 @@ class Game:
         for i, prop in enumerate(player.properties):
             print(f"  {i + 1}. {prop.name}")
         pidx = ui.safe_int_input("  Property to offer: ", default=0) - 1
-        if not (0 <= pidx < len(player.properties)):
+        if not 0 <= pidx < len(player.properties):
             return
         chosen_prop = player.properties[pidx]
         cash = ui.safe_int_input(
