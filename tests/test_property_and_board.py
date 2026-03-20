@@ -28,7 +28,8 @@ def test_board_get_tile_type_property_tile():
 
 def test_board_get_tile_type_blank_tile():
     b = board.Board()
-    assert b.get_tile_type(4) == "blank"
+    # Position 12 is not special and not a property in the board definition.
+    assert b.get_tile_type(12) == "blank"
 
 
 def test_board_is_purchasable_false_when_no_property():
