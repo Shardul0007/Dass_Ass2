@@ -339,7 +339,7 @@ class Game:  # pylint: disable=too-many-instance-attributes
                 print(f"  {player.name} passed Go and collected ${GO_SALARY}.")
 
             tile = self.board.get_tile_type(value)
-            if tile == "property":
+            if tile in {"property", "railroad"}:
                 prop = self.board.get_property_at(value)
                 if prop:
                     self._handle_property_tile(player, prop)

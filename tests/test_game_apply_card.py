@@ -251,6 +251,26 @@ def test_apply_card_move_to_property_with_missing_property_does_not_call_handle_
     assert player_obj.position == 1
 
 
+def test_apply_card_move_to_railroad_triggers_property_tile_handling(stub_ui, monkeypatch):
+    # Edge case: move_to should resolve railroad tiles the same way as movement.
+    from conftest import StubBoard, StubBank, StubPlayer, StubProperty
+
+    player_obj = StubPlayer("A", position=20)
+    prop = StubProperty(name="Rail", owner=None)
+    board = StubBoard(tile="railroad", prop=prop)
+    g = _make_game_with_stubs(stub_ui=stub_ui, board=board, bank=StubBank(), players=[player_obj])
+    monkeypatch.setattr(game, "ui", stub_ui)
+
+    called = {}
+    monkeypatch.setattr(g, "_handle_property_tile", lambda p, pr: called.update({"p": p, "pr": pr}))
+
+    g._apply_card(player_obj, {"description": "Move", "action": "move_to", "value": 1})
+
+    assert player_obj.position == 1
+    assert called["p"] == player_obj
+    assert called["pr"] == prop
+
+
 def test_apply_card_birthday_transfers_from_all_eligible_players(stub_ui, monkeypatch):
     # CFG: _apply_card -> action in {'birthday','collect_from_all'}; transfer loop charges all other players
     from conftest import StubBoard, StubBank, StubPlayer
