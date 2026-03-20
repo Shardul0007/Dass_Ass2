@@ -1,8 +1,9 @@
-import math
-from moneypoly.config import BANK_STARTING_FUNDS
+"""Module defining the Bank class for managing the bank's funds and loans in the Monopoly game."""
+from config import BANK_STARTING_FUNDS
 
 
 class Bank:
+    """Tracks bank reserves, collections, and emergency loans."""
     def __init__(self):
         self._funds = BANK_STARTING_FUNDS
         self._loans_issued = []
