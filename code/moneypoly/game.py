@@ -345,10 +345,15 @@ class Game:  # pylint: disable=too-many-instance-attributes
                     self._handle_property_tile(player, prop)
 
         def transfer_from_all():
-            for other in self.players:
-                if other != player and other.balance >= value:
-                    other.deduct_money(value)
-                    player.add_money(value)
+            if value <= 0:
+                return
+            # Iterate over a snapshot because bankruptcy checks may remove players.
+            for other in list(self.players):
+                if other == player:
+                    continue
+                other.deduct_money(value)
+                player.add_money(value)
+                self._check_bankruptcy(other)
 
         action_map = {
             "collect": handle_collect,

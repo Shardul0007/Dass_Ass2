@@ -120,18 +120,19 @@ def test_apply_card_transfer_from_all_actions(monkeypatch):
     g.players = [target, rich, poor]
     g.bank = bank
     g.board = board
+    g.current_index = 0
 
     # collect_from_all
     g._apply_card(target, {"description": "from all", "action": "collect_from_all", "value": 10})
-    assert target.balance == 10
+    assert target.balance == 20
     assert rich.balance == 90
-    assert poor.balance == 5
+    assert poor.is_eliminated is True
 
     # birthday (same transfer function)
     g._apply_card(target, {"description": "birthday", "action": "birthday", "value": 5})
-    assert target.balance == 20
+    assert target.balance == 25
     assert rich.balance == 85
-    assert poor.balance == 0
+    assert poor not in g.players
 
 
 def test_apply_card_unknown_action_is_noop():

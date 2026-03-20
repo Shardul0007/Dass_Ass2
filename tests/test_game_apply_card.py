@@ -252,7 +252,7 @@ def test_apply_card_move_to_property_with_missing_property_does_not_call_handle_
 
 
 def test_apply_card_birthday_transfers_from_all_eligible_players(stub_ui, monkeypatch):
-    # CFG: _apply_card -> action in {'birthday','collect_from_all'}; transfer loop true branch
+    # CFG: _apply_card -> action in {'birthday','collect_from_all'}; transfer loop charges all other players
     from conftest import StubBoard, StubBank, StubPlayer
 
     recipient = StubPlayer("A", balance=0)
@@ -268,12 +268,12 @@ def test_apply_card_birthday_transfers_from_all_eligible_players(stub_ui, monkey
 
     # Assert
     assert donor_ok.balance == 4
-    assert donor_poor.balance == 5
-    assert recipient.balance == 6
+    assert donor_poor.balance == -1
+    assert recipient.balance == 12
 
 
 def test_apply_card_collect_from_all_no_eligible_donors_no_transfer(stub_ui, monkeypatch):
-    # CFG: _apply_card -> transfer loop false branch (donor.balance < value)
+    # Edge case: even "poor" players still owe the card amount (may go negative).
     from conftest import StubBoard, StubBank, StubPlayer
 
     recipient = StubPlayer("A", balance=0)
@@ -287,8 +287,8 @@ def test_apply_card_collect_from_all_no_eligible_donors_no_transfer(stub_ui, mon
     g._apply_card(recipient, card)
 
     # Assert
-    assert recipient.balance == 0
-    assert donor_poor.balance == 1
+    assert recipient.balance == 50
+    assert donor_poor.balance == -49
 
 
 def test_apply_card_invalid_action_no_effect(stub_ui, monkeypatch):
