@@ -1,17 +1,21 @@
-class Property:
+"""Module defining the Property and PropertyGroup 
+classes for the Monopoly game."""
+class Property:  # pylint: disable=too-many-instance-attributes
     """Represents a single purchasable property tile on the MoneyPoly board."""
 
     FULL_GROUP_MULTIPLIER = 2
 
-    def __init__(self, name, position, price, base_rent, group=None):
-        self.name = name
-        self.position = position
-        self.price = price
-        self.base_rent = base_rent
-        self.mortgage_value = price // 2
-        self.owner = None
-        self.is_mortgaged = False
+    def __init__(self, config, group=None):
+        self.name = config["name"]
+        self.position = config["position"]
+        self.price = config["price"]
+        self.base_rent = config["base_rent"]
+
         self.houses = 0
+        self.owner = None
+
+        self.mortgage_value = self.price // 2
+        self.is_mortgaged = False
 
         # Register with the group immediately on creation
         self.group = group
@@ -47,21 +51,22 @@ class Property:
         """
         if not self.is_mortgaged:
             return 0
-        else:
-            cost = int(self.mortgage_value * 1.1)
-            self.is_mortgaged = False
-            return cost
+        cost = int(self.mortgage_value * 1.1)
+        self.is_mortgaged = False
+        return cost
 
     def is_available(self):
         """Return True if this property can be purchased (unowned, not mortgaged)."""
         return self.owner is None and not self.is_mortgaged
 
     def __repr__(self):
+        """Return a concise string representation of this property."""
         owner_name = self.owner.name if self.owner else "unowned"
         return f"Property({self.name!r}, pos={self.position}, owner={owner_name!r})"
 
 
 class PropertyGroup:
+    """Represents a colour group that contains multiple properties."""
     def __init__(self, name, color):
         self.name = name
         self.color = color
