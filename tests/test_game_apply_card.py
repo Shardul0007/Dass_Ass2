@@ -290,6 +290,8 @@ def test_apply_card_birthday_transfers_from_all_eligible_players(stub_ui, monkey
     assert donor_ok.balance == 4
     assert donor_poor.balance == -1
     assert recipient.balance == 12
+    assert recipient.is_eliminated is False
+    assert recipient in g.players
 
 
 def test_apply_card_collect_from_all_no_eligible_donors_no_transfer(stub_ui, monkeypatch):
@@ -309,6 +311,20 @@ def test_apply_card_collect_from_all_no_eligible_donors_no_transfer(stub_ui, mon
     # Assert
     assert recipient.balance == 50
     assert donor_poor.balance == -49
+
+def test_apply_card_collect_from_all_negative_value_is_ignored(stub_ui, monkeypatch):
+    # Mutation-killer: guard `if value <= 0: return` must remain.
+    from conftest import StubBoard, StubBank, StubPlayer
+
+    recipient = StubPlayer("A", balance=10)
+    donor = StubPlayer("B", balance=10)
+    g = _make_game_with_stubs(stub_ui=stub_ui, board=StubBoard(), bank=StubBank(), players=[recipient, donor])
+    monkeypatch.setattr(game, "ui", stub_ui)
+
+    g._apply_card(recipient, {"description": "Bad card", "action": "collect_from_all", "value": -1})
+
+    assert recipient.balance == 10
+    assert donor.balance == 10
 
 
 def test_apply_card_invalid_action_no_effect(stub_ui, monkeypatch):

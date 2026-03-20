@@ -175,3 +175,50 @@ def test_simulation_many_turns_no_exceptions(monkeypatch, turns):
             assert 0 <= p.position < 40
             assert p.jail_turns >= 0
             assert p.get_out_of_jail_cards >= 0
+
+
+def test_simulation_seeded_stress_run_no_crash(monkeypatch):
+    # Stress: run many turns with deterministic pseudo-randomness.
+    import random
+
+    rng = random.Random(12345)
+
+    monkeypatch.setattr(game_mod, "ui", _NoOpUI())
+    monkeypatch.setattr(builtins, "input", lambda _prompt="": rng.choice(["b", "a", "s"]))
+
+    g = game_mod.Game(["A", "B", "C", "D"])
+
+    class _RngDice:
+        def __init__(self):
+            self.doubles_streak = 0
+            self._last = (1, 2)
+
+        def roll(self):
+            d1 = rng.randint(1, 6)
+            d2 = rng.randint(1, 6)
+            self._last = (d1, d2)
+            if d1 == d2:
+                self.doubles_streak += 1
+            else:
+                self.doubles_streak = 0
+            return d1 + d2
+
+        def describe(self):
+            return f"{self._last[0]}+{self._last[1]}"
+
+        def is_doubles(self):
+            return self._last[0] == self._last[1]
+
+    g.dice = _RngDice()
+
+    # Run a long-ish game; assert basic invariants and no exceptions.
+    for _ in range(300):
+        if len(g.players) <= 1:
+            break
+        g.play_turn()
+
+        assert g.bank.get_balance() >= 0
+        for p in g.players:
+            assert 0 <= p.position < 40
+            assert p.jail_turns >= 0
+            assert p.get_out_of_jail_cards >= 0

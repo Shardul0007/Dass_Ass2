@@ -203,5 +203,6 @@ def test_property_group_add_property_and_counts_and_repr():
 
     counts = g.get_owner_counts()
     assert counts.get(owner) == 2
+    assert None not in counts
     assert g.size() == 3
     assert "PropertyGroup(" in repr(g)

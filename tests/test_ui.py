@@ -53,6 +53,10 @@ def test_confirm_no_variants(monkeypatch):
     monkeypatch.setattr("builtins.input", lambda _p: "n")
     assert ui.confirm("?") is False
 
+def test_confirm_unrecognized_input_is_not_yes(monkeypatch):
+    monkeypatch.setattr("builtins.input", lambda _p: "z")
+    assert ui.confirm("?") is False
+
 
 def test_print_player_card_branches_do_not_crash(monkeypatch):
     # White-box: exercise jail line, jail cards line, properties list, mortgaged tag.

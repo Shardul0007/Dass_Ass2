@@ -34,6 +34,23 @@ def test_buy_property_allows_exact_funds(monkeypatch):
     assert prop in player.properties
     assert bank.collected == 100
 
+def test_buy_property_succeeds_when_player_has_more_than_price():
+    # Mutation-killer: affordability check must be strictly `<`, not `!=`.
+    from conftest import StubPlayer, StubProperty, StubBank
+
+    player = StubPlayer("A", balance=150)
+    prop = StubProperty(name="P", price=100, owner=None)
+    bank = StubBank()
+    g = _make_game_with_bank(players=[player], bank=bank)
+
+    ok = g.buy_property(player, prop)
+
+    assert ok is True
+    assert player.balance == 50
+    assert prop.owner == player
+    assert prop in player.properties
+    assert bank.collected == 100
+
 
 def test_pay_rent_transfers_to_owner_when_not_mortgaged():
     # Branch: pay_rent with non-mortgaged, owned property.
@@ -178,4 +195,28 @@ def test_unmortgage_property_success_charges_player_and_credits_bank():
     assert ok is True
     assert prop.is_mortgaged is False
     assert player.balance == 1000 - cost
+    assert bank.get_balance() == before_bank + cost
+
+def test_unmortgage_property_allows_exact_cost_balance():
+    # Mutation-killer: affordability must be `< cost`, not `<= cost`.
+    from conftest import StubPlayer
+
+    bank = bank_mod.Bank()
+    prop = property_mod.Property("P", 1, 200, 20, None)
+
+    player = StubPlayer("A", balance=0)
+    prop.owner = player
+    player.add_property(prop)
+    prop.mortgage()
+
+    cost = int(prop.mortgage_value * 1.1)
+    player.balance = cost
+    before_bank = bank.get_balance()
+
+    g = _make_game_with_bank(players=[player], bank=bank)
+    ok = g.unmortgage_property(player, prop)
+
+    assert ok is True
+    assert prop.is_mortgaged is False
+    assert player.balance == 0
     assert bank.get_balance() == before_bank + cost

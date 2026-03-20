@@ -192,6 +192,30 @@ def test_interactive_menu_loan_amount_non_positive_is_ignored(stub_ui, monkeypat
 
     assert called["loan"] == 0
 
+def test_interactive_menu_positive_loan_amount_calls_bank(stub_ui, monkeypatch):
+    from conftest import StubBank, StubPlayer
+
+    player = StubPlayer("A")
+    bank = StubBank()
+    dice = _FakeDice()
+    g = _make_game_with_stubs(players=[player], bank=bank, dice=dice)
+
+    # Choose "6" then enter a positive loan amount, then exit.
+    stub_ui.int_answers = [6, 25, 0]
+    monkeypatch.setattr(game, "ui", stub_ui)
+
+    called = {"loan": 0}
+    monkeypatch.setattr(
+        bank,
+        "give_loan",
+        lambda *_args, **_kwargs: called.__setitem__("loan", called["loan"] + 1),
+        raising=False,
+    )
+
+    g.interactive_menu(player)
+
+    assert called["loan"] == 1
+
 
 def test_menu_mortgage_no_mortgageable_properties(stub_ui, monkeypatch):
     from conftest import StubBank, StubPlayer
@@ -201,6 +225,24 @@ def test_menu_mortgage_no_mortgageable_properties(stub_ui, monkeypatch):
     dice = _FakeDice()
     g = _make_game_with_stubs(players=[player], bank=bank, dice=dice)
 
+    monkeypatch.setattr(game, "ui", stub_ui)
+
+    g._menu_mortgage(player)
+
+
+def test_menu_mortgage_no_mortgageable_properties_does_not_prompt_for_selection(stub_ui, monkeypatch):
+    # Mutation-killer: `if not mortgageable: return` must be preserved.
+    from conftest import StubBank, StubPlayer
+
+    player = StubPlayer("A")
+    bank = StubBank()
+    dice = _FakeDice()
+    g = _make_game_with_stubs(players=[player], bank=bank, dice=dice)
+
+    def _boom(*_args, **_kwargs):
+        raise AssertionError("Should not prompt for selection when no mortgageable properties")
+
+    stub_ui.safe_int_input = _boom
     monkeypatch.setattr(game, "ui", stub_ui)
 
     g._menu_mortgage(player)
@@ -227,6 +269,31 @@ def test_menu_mortgage_select_valid_property_calls_mortgage(stub_ui, monkeypatch
 
     assert called["p"] == player
     assert called["pr"] == prop
+
+def test_menu_mortgage_selects_second_property_when_available(stub_ui, monkeypatch):
+    # Mutation-killer: index-range check must allow idx > 0.
+    from conftest import StubBank, StubPlayer, StubProperty
+
+    player = StubPlayer("A")
+    p1 = StubProperty(name="P1")
+    p2 = StubProperty(name="P2")
+    player.add_property(p1)
+    player.add_property(p2)
+
+    bank = StubBank()
+    dice = _FakeDice()
+    g = _make_game_with_stubs(players=[player], bank=bank, dice=dice)
+
+    stub_ui.int_answers = [2]
+    monkeypatch.setattr(game, "ui", stub_ui)
+
+    called = {}
+    monkeypatch.setattr(g, "mortgage_property", lambda p, pr: called.update({"p": p, "pr": pr}))
+
+    g._menu_mortgage(player)
+
+    assert called["p"] == player
+    assert called["pr"] == p2
 
 
 def test_menu_unmortgage_no_mortgaged_properties(stub_ui, monkeypatch):
@@ -292,6 +359,50 @@ def test_auction_property_covers_pass_too_low_too_high_and_winner(stub_ui, monke
     assert prop in p3.properties
     assert p3.balance == 30
     assert bank.collected == 20
+
+def test_auction_property_rejects_too_low_bid_to_preserve_winner(stub_ui, monkeypatch):
+    # Mutation-killer: `if bid < min_required` must not become `==`.
+    from conftest import StubBank, StubPlayer, StubProperty
+
+    p1 = StubPlayer("P1", balance=50)
+    p2 = StubPlayer("P2", balance=50)
+
+    prop = StubProperty(name="Avenue", price=100)
+    bank = StubBank()
+    dice = _FakeDice()
+    g = _make_game_with_stubs(players=[p1, p2], bank=bank, dice=dice)
+
+    # p1 bids too low (should be rejected); p2 bids the minimum (should win).
+    stub_ui.int_answers = [5, 10]
+    monkeypatch.setattr(game, "ui", stub_ui)
+
+    g.auction_property(prop)
+
+    assert prop.owner == p2
+    assert p2.balance == 40
+    assert bank.collected == 10
+
+
+def test_auction_property_accepts_bid_equal_to_minimum_increment(stub_ui, monkeypatch):
+    # Mutation-killer: if bid < min_required must accept bid == min_required.
+    from conftest import StubBank, StubPlayer, StubProperty
+
+    p1 = StubPlayer("P1", balance=50)
+    p2 = StubPlayer("P2", balance=50)
+    prop = StubProperty(name="Avenue", price=100)
+    bank = StubBank()
+    dice = _FakeDice()
+    g = _make_game_with_stubs(players=[p1, p2], bank=bank, dice=dice)
+
+    # p1 bids exactly the required minimum; p2 passes.
+    stub_ui.int_answers = [10, 0]
+    monkeypatch.setattr(game, "ui", stub_ui)
+
+    g.auction_property(prop)
+
+    assert prop.owner == p1
+    assert p1.balance == 40
+    assert bank.collected == 10
 
 
 def test_handle_property_tile_unowned_auction_path(monkeypatch):
@@ -387,6 +498,34 @@ def test_menu_unmortgage_valid_selection_calls_unmortgage(stub_ui, monkeypatch):
 
     assert called["p"] == player
     assert called["pr"] == prop
+
+
+def test_menu_unmortgage_selects_second_property_when_available(stub_ui, monkeypatch):
+    # Mutation-killer: index-range check must allow idx > 0.
+    from conftest import StubBank, StubPlayer, StubProperty
+
+    player = StubPlayer("A")
+    p1 = StubProperty(name="P1")
+    p2 = StubProperty(name="P2")
+    p1.is_mortgaged = True
+    p2.is_mortgaged = True
+    player.add_property(p1)
+    player.add_property(p2)
+
+    bank = StubBank()
+    dice = _FakeDice()
+    g = _make_game_with_stubs(players=[player], bank=bank, dice=dice)
+
+    stub_ui.int_answers = [2]
+    monkeypatch.setattr(game, "ui", stub_ui)
+
+    called = {}
+    monkeypatch.setattr(g, "unmortgage_property", lambda p, pr: called.update({"p": p, "pr": pr}))
+
+    g._menu_unmortgage(player)
+
+    assert called["p"] == player
+    assert called["pr"] == p2
 
 
 def test_menu_unmortgage_invalid_index_does_not_call_unmortgage(stub_ui, monkeypatch):

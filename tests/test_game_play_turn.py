@@ -113,3 +113,19 @@ def test_play_turn_non_doubles_advances_turn(stub_ui, monkeypatch):
     # Assert
     assert called["move"] == 5
     assert called["advance"] == 1
+
+def test_play_turn_banner_turn_number_is_one_indexed(stub_ui, monkeypatch):
+    from conftest import StubPlayer
+
+    player = StubPlayer("A")
+    g = _make_game_with_stubs(dice=_FakeDice(doubles_streak=0, doubles=False, roll_total=5), players=[player])
+    monkeypatch.setattr(game, "ui", stub_ui)
+
+    monkeypatch.setattr(g, "_move_and_resolve", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(g, "advance_turn", lambda: None)
+
+    g.turn_number = 0
+    g.play_turn()
+
+    assert stub_ui.banners, "Expected play_turn() to render a banner"
+    assert stub_ui.banners[0].startswith("Turn 1"), stub_ui.banners[0]

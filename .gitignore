@@ -11,6 +11,13 @@ coverage.xml
 # Hypothesis cache
 .hypothesis/
 
+# Mutation testing (mutmut)
+.mutmut-cache/
+.mutmut/
+
+# Mutation testing (mutatest)
+.mutatest_cache/
+
 # Virtual environments
 .venv/
 venv/

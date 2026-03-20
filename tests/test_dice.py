@@ -55,3 +55,9 @@ def test_dice_reset_and_describe_branches():
     d.die1 = 1
     d.die2 = 2
     assert "(DOUBLES)" not in d.describe()
+    
+def test_dice_total_is_sum_not_modulo():
+    d = dice.Dice()
+    d.die1 = 6
+    d.die2 = 4
+    assert d.total() == 10
