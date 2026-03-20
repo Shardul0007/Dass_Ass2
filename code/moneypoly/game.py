@@ -185,15 +185,16 @@ class Game:  # pylint: disable=too-many-instance-attributes
         if prop.owner != player:
             print(f"  {player.name} does not own {prop.name}.")
             return False
-        cost = prop.unmortgage()
-        if cost == 0:
+        if not prop.is_mortgaged:
             print(f"  {prop.name} is not mortgaged.")
             return False
+        cost = int(prop.mortgage_value * 1.1)
         if player.balance < cost:
             print(f"  {player.name} cannot afford to unmortgage {prop.name} (${cost}).")
             return False
         player.deduct_money(cost)
         self.bank.collect(cost)
+        prop.unmortgage()
         print(f"  {player.name} unmortgaged {prop.name} for ${cost}.")
         return True
 
