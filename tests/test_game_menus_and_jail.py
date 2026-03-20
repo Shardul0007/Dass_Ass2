@@ -77,6 +77,7 @@ def test_handle_jail_turn_pays_fine_and_moves(stub_ui, monkeypatch):
     g._handle_jail_turn(player)
 
     assert bank.collected == JAIL_FINE
+    assert player.balance == 100 - JAIL_FINE
     assert player.in_jail is False
     assert player.jail_turns == 0
     assert moved["steps"] == 8
@@ -335,6 +336,7 @@ def test_handle_jail_turn_declines_card_then_pays_fine(stub_ui, monkeypatch):
     g._handle_jail_turn(player)
 
     assert bank.collected == JAIL_FINE
+    assert player.balance == 100 - JAIL_FINE
     assert player.get_out_of_jail_cards == 1
     assert player.in_jail is False
     assert moved["steps"] == 4

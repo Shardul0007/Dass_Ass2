@@ -276,6 +276,7 @@ class Game:  # pylint: disable=too-many-instance-attributes
 
         # Offer to pay the fine voluntarily
         if ui.confirm(f"  Pay ${JAIL_FINE} fine to leave jail? (y/n): "):
+            player.deduct_money(JAIL_FINE)
             self.bank.collect(JAIL_FINE)
             player.in_jail = False
             player.jail_turns = 0
