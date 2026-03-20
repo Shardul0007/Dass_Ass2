@@ -11,6 +11,12 @@ def test_card_deck_peek_on_empty_returns_none():
     assert d.peek() is None
 
 
+def test_card_deck_cards_remaining_on_empty_is_zero_and_repr_does_not_crash():
+    d = cards.CardDeck([])
+    assert d.cards_remaining() == 0
+    assert "CardDeck(" in repr(d)
+
+
 def test_card_deck_draw_cycles_through_cards():
     c1 = {"description": "1", "action": "collect", "value": 1}
     c2 = {"description": "2", "action": "collect", "value": 2}
