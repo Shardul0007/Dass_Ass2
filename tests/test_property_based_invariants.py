@@ -66,7 +66,7 @@ def test_card_deck_draw_cycles_without_exceptions(cards, draws):
     buyer_balance=st.integers(min_value=0, max_value=3000),
     seller_balance=st.integers(min_value=0, max_value=3000),
 )
-@settings(max_examples=120)
+@settings(max_examples=250)
 def test_trade_conserves_cash_when_valid(cash_amount, buyer_balance, seller_balance):
     from conftest import StubPlayer, StubProperty
 
@@ -89,6 +89,55 @@ def test_trade_conserves_cash_when_valid(cash_amount, buyer_balance, seller_bala
         assert ok is True
         assert seller.balance + buyer.balance == before_sum
         assert prop.owner == buyer
+
+
+@given(
+    value=st.integers(min_value=1, max_value=200),
+    balances=st.lists(st.integers(min_value=0, max_value=300), min_size=2, max_size=6),
+)
+@settings(max_examples=200)
+def test_collect_from_all_is_redistribution_only(value, balances):
+    # Invariant: collect_from_all should redistribute money among players; it must not create/destroy money.
+    from conftest import StubBoard, StubBank, StubPlayer
+
+    players = [StubPlayer(f"P{i}", balance=b) for i, b in enumerate(balances)]
+    all_players = list(players)
+    recipient = all_players[0]
+
+    g = game_mod.Game.__new__(game_mod.Game)
+    g.players = players
+    g.bank = StubBank()
+    g.board = StubBoard(tile="blank", prop=None)
+    g.current_index = 0
+
+    before_total = sum(p.balance for p in all_players)
+    g._apply_card(recipient, {"description": "from all", "action": "collect_from_all", "value": value})
+
+    after_total = sum(p.balance for p in all_players)
+    assert after_total == before_total
+
+
+@given(
+    action=st.sampled_from(["collect", "pay", "jail", "jail_free", "move_to", "birthday", "collect_from_all"]),
+    value=st.integers(min_value=0, max_value=300),
+    start_pos=st.integers(min_value=0, max_value=39),
+)
+@settings(max_examples=200)
+def test_apply_card_never_raises_for_known_actions(action, value, start_pos):
+    from conftest import StubBoard, StubBank, StubPlayer
+
+    player = StubPlayer("A", balance=200, position=start_pos)
+    other = StubPlayer("B", balance=50)
+
+    g = game_mod.Game.__new__(game_mod.Game)
+    g.players = [player, other]
+    g.bank = StubBank()
+
+    # Keep board simple; move_to only triggers property logic on tile == 'property'.
+    g.board = StubBoard(tile="blank", prop=None)
+    g.current_index = 0
+
+    g._apply_card(player, {"description": "fuzz", "action": action, "value": value})
 
 
 @pytest.mark.parametrize("turns", [25, 60])
