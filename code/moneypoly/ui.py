@@ -1,3 +1,5 @@
+"""Module defining UI functions for displaying 
+game information and prompting user input."""
 def print_banner(title):
     """Print a decorated section header."""
     width = 52
@@ -66,7 +68,7 @@ def safe_int_input(prompt, default=0):
     """
     try:
         return int(input(prompt))
-    except:
+    except ValueError:
         return default
 
 
