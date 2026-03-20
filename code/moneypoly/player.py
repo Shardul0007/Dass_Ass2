@@ -17,6 +17,33 @@ class Player:
             "get_out_of_jail_cards": 0
         }
 
+    @property
+    def in_jail(self):
+        """Compatibility attribute for game logic (mirrors jail['in_jail'])."""
+        return bool(self.jail.get("in_jail", False))
+
+    @in_jail.setter
+    def in_jail(self, value):
+        self.jail["in_jail"] = bool(value)
+
+    @property
+    def jail_turns(self):
+        """Compatibility attribute for game logic (mirrors jail['turns'])."""
+        return int(self.jail.get("turns", 0))
+
+    @jail_turns.setter
+    def jail_turns(self, value):
+        self.jail["turns"] = int(value)
+
+    @property
+    def get_out_of_jail_cards(self):
+        """Compatibility attribute for game logic (mirrors jail['get_out_of_jail_cards'])."""
+        return int(self.jail.get("get_out_of_jail_cards", 0))
+
+    @get_out_of_jail_cards.setter
+    def get_out_of_jail_cards(self, value):
+        self.jail["get_out_of_jail_cards"] = int(value)
+
 
     def add_money(self, amount):
         """Add funds to this player's balance. Amount must be non-negative."""
