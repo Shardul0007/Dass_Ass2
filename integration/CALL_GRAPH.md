@@ -1,6 +1,6 @@
 # Call Graph (Function-Level)
 
-Requirement note: you must **draw the final call graph by hand** for submission. This file provides the *exact nodes/edges* to copy into a hand-drawn diagram.
+Requirement note: you must **draw the final call graph by hand** for submission. This file provides the _exact nodes/edges_ to copy into a hand-drawn diagram.
 
 ## Inter-module call list (key edges)
 
@@ -22,7 +22,7 @@ Requirement note: you must **draw the final call graph by hand** for submission.
 - `race_management.run_race` → `results.record_result`
 - `race_management.run_race` → `results.update_rankings`
 - `race_management.run_race` → `results.award_prize`
-- `results.award_prize` → `inventory.remove_cash`
+- `results.award_prize` → `inventory.add_cash`
 
 - `mission_planning.can_start_mission` → `crew_management.is_available_for_role`
 - `mission_planning.start_mission` → `mission_planning.can_start_mission`
@@ -48,7 +48,7 @@ flowchart TD
   res_record[results.record_result]
   res_rank[results.update_rankings]
   res_prize[results.award_prize]
-  inv_remcash[inventory.remove_cash]
+  inv_addcash2[inventory.add_cash]
   mission_create[mission_planning.create_mission]
   mission_start[mission_planning.start_mission]
   mission_can[mission_planning.can_start_mission]
@@ -74,7 +74,7 @@ flowchart TD
   race_run --> res_record
   race_run --> res_rank
   race_run --> res_prize
-  res_prize --> inv_remcash
+  res_prize --> inv_addcash2
 
   mission_start --> mission_can
   mission_can --> crew_avail
