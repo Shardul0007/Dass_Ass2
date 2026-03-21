@@ -16,8 +16,9 @@ def assign_role(registry: Dict[str, CrewMember], name: str, role: str) -> None:
     if role not in VALID_ROLES:
         raise ValueError(f"Invalid role: {role}")
 
-    # BUG: should validate name exists in registry.
-    member = registry.get(name) or CrewMember(name=name)
+    member = registry.get(name)
+    if member is None:
+        raise ValueError("Crew member must be registered before assigning a role")
     member.role = role
     registry[name] = member
 
