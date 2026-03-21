@@ -38,8 +38,7 @@ def can_start_mission(registry: Dict[str, CrewMember], mission: Mission) -> bool
     Bug (intentional for integration tests): uses ANY role rather than ALL.
     """
     required = mission.required_roles
-    # BUG: should require all roles.
-    return any(crew_management.is_available_for_role(registry, r) for r in required)
+    return all(crew_management.is_available_for_role(registry, r) for r in required)
 
 
 def start_mission(registry: Dict[str, CrewMember], mission: Mission) -> None:
