@@ -28,5 +28,4 @@ def award_prize(inv: inventory_mod.Inventory, amount: int) -> None:
     """
     if amount <= 0:
         return
-    # BUG: should add cash, not remove it.
-    inventory_mod.remove_cash(inv, amount)
+    inventory_mod.add_cash(inv, amount)
