@@ -10,8 +10,7 @@ def damage_car(car: Car, damage: int) -> None:
     """
     if damage <= 0:
         return
-    # BUG: should subtract damage.
-    car.condition = min(100, car.condition + damage)
+    car.condition = max(0, car.condition - damage)
 
 
 def repair_car(car: Car, repair: int) -> None:
