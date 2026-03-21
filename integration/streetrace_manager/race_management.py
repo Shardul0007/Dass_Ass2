@@ -32,8 +32,9 @@ def enter_race(registry, inv, races: Dict[str, Race], race_id: str, driver_name:
     if car is None:
         raise ValueError("Car not found")
 
-    # BUG: must enforce driver role.
-    _role = crew_management.get_role(registry, driver_name)
+    role = crew_management.get_role(registry, driver_name)
+    if role != "driver":
+        raise ValueError("Only crew members with the driver role may enter a race")
 
     race.driver_name = driver_name
     race.car_id = car_id
