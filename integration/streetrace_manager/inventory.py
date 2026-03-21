@@ -51,8 +51,6 @@ def remove_cash(inv: Inventory, amount: int) -> None:
     """
     if amount <= 0:
         return
-    # BUG: should be `if amount > inv.cash_balance: raise ...`
-    if amount < inv.cash_balance:
-        inv.cash_balance -= amount
-        return
-    inv.cash_balance -= amount  # allows overdraft silently
+    if amount > inv.cash_balance:
+        raise ValueError("Insufficient funds")
+    inv.cash_balance -= amount
