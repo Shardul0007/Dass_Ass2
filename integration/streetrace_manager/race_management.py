@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Dict, List
 
 from . import crew_management
+from . import maintenance
 from . import results as results_mod
 from .models import Race, RaceResult
 
@@ -55,6 +56,10 @@ def run_race(registry, inv, races: Dict[str, Race], results: List[RaceResult], r
 
     # Deterministic outcome for testing: skill >= 5 => win else lose.
     outcome = "win" if driver_skill >= 5 else "lose"
+
+    car = inv.cars.get(car_id)
+    if car is not None and outcome != "win":
+        maintenance.damage_car(car, damage=20)
 
     result = RaceResult(race_id=race_id, driver_name=driver_name, car_id=car_id, outcome=outcome)
     results_mod.record_result(results, result)

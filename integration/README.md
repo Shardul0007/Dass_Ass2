@@ -11,6 +11,11 @@ Command-line system for managing underground street races, crew members, vehicle
 - **Results module**: `streetrace_manager/results.py`
 - **Mission Planning module**: `streetrace_manager/mission_planning.py`
 
+## Extra modules (2)
+
+- **Maintenance module**: `streetrace_manager/maintenance.py` (damage/repair vehicle condition)
+- **Audit Log module**: `streetrace_manager/audit_log.py` (records key system events for traceability)
+
 ## CLI
 
 Run from the repo root:
