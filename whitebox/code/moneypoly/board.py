@@ -1,6 +1,6 @@
 """Module defining the Board class, which represents the Monopoly game board and its tiles."""
-from property import Property, PropertyGroup
-from config import (
+from .property import Property, PropertyGroup
+from .config import (
     JAIL_POSITION,
     GO_TO_JAIL_POSITION,
     FREE_PARKING_POSITION,

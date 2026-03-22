@@ -1,7 +1,7 @@
 """Module defining the Game class, which manages 
 the overall state and flow of a MoneyPoly game session."""
 
-from config import (
+from .config import (
     JAIL_FINE,
     AUCTION_MIN_INCREMENT,
     INCOME_TAX_AMOUNT,
@@ -9,12 +9,12 @@ from config import (
     MAX_TURNS,
     GO_SALARY,
 )
-from player import Player
-from board import Board
-from bank import Bank
-from dice import Dice
-from cards import CardDeck, CHANCE_CARDS, COMMUNITY_CHEST_CARDS
-import ui
+from .player import Player
+from .board import Board
+from .bank import Bank
+from .dice import Dice
+from .cards import CardDeck, CHANCE_CARDS, COMMUNITY_CHEST_CARDS
+from . import ui
 
 class Game:  # pylint: disable=too-many-instance-attributes
     """Manages the full state and flow of a MoneyPoly game session."""

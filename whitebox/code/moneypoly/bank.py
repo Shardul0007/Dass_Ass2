@@ -1,5 +1,5 @@
 """Module defining the Bank class for managing the bank's funds and loans in the Monopoly game."""
-from config import BANK_STARTING_FUNDS
+from .config import BANK_STARTING_FUNDS
 
 
 class Bank:

@@ -265,6 +265,8 @@ def test_checkout_validations_and_order_created(qc, qc_user_id, qc_product):
         qty = max(qty, 1)
 
     stock = qc_product.get("stock")
+    if not isinstance(stock, int):
+        stock = qc_product.get("stock_quantity")
     if isinstance(stock, int) and stock >= qty:
         _ensure_cart_has_item(qc, qc_user_id, product_id, quantity=qty)
         resp = qc.request("POST", "/api/v1/checkout", user_id=qc_user_id, json={"payment_method": "COD"})
@@ -304,12 +306,12 @@ def test_orders_list_and_invoice_structure(qc, qc_user_id):
     # Must include subtotal, gst, total
     assert any(k in invoice for k in ("subtotal", "sub_total"))
     assert any(k in invoice for k in ("gst", "gst_amount"))
-    assert any(k in invoice for k in ("total", "grand_total"))
+    assert any(k in invoice for k in ("total", "grand_total", "total_amount"))
 
 
 def test_cancel_order_nonexistent_404(qc, qc_user_id):
     resp = qc.request("POST", "/api/v1/orders/99999999/cancel", user_id=qc_user_id)
-    assert resp.status_code in (404, 400)
+    assert resp.status_code == 404
 
 
 def test_cancel_delivered_order_rejected_if_any_exist(qc, qc_user_id):

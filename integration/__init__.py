@@ -1,1 +1,0 @@
-"""Integration assignment package root."""

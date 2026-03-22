@@ -17,7 +17,7 @@ def _get_price(product: dict) -> float:
     raise AssertionError(f"Could not determine product price from keys={list(product)}")
 
 
-def test_products_list_returns_only_active_products(qc):
+def test_products_list_returns_only_active_products(qc, qc_user_id):
     admin = qc.request("GET", "/api/v1/admin/products")
     assert admin.status_code == 200
     admin_payload = qc.get_json(admin)
@@ -30,7 +30,7 @@ def test_products_list_returns_only_active_products(qc):
             if active is False:
                 inactive_ids.add(row.get("product_id") or row.get("id"))
 
-    resp = qc.request("GET", "/api/v1/products", headers={})
+    resp = qc.request("GET", "/api/v1/products", user_id=qc_user_id)
     assert resp.status_code == 200
     payload = qc.get_json(resp)
 
@@ -41,9 +41,9 @@ def test_products_list_returns_only_active_products(qc):
     assert not (returned_ids & inactive_ids)
 
 
-def test_get_product_by_id_404_for_unknown(qc):
-    resp = qc.request("GET", "/api/v1/products/99999999")
-    assert resp.status_code in (404, 400)
+def test_get_product_by_id_404_for_unknown(qc, qc_user_id):
+    resp = qc.request("GET", "/api/v1/products/99999999", user_id=qc_user_id)
+    assert resp.status_code == 404
 
 
 def test_cart_add_update_remove_and_totals(qc, qc_user_id, qc_product, qc_clean_cart):
@@ -122,6 +122,8 @@ def test_cart_add_update_remove_and_totals(qc, qc_user_id, qc_product, qc_clean_
 def test_cart_rejects_quantity_more_than_stock(qc, qc_user_id, qc_product, qc_clean_cart):
     product_id = _get_product_id(qc_product)
     stock = qc_product.get("stock")
+    if not isinstance(stock, int):
+        stock = qc_product.get("stock_quantity")
 
     if not isinstance(stock, int) or stock <= 0:
         pytest.skip("Selected product has no usable stock info")

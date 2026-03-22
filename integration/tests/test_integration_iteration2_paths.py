@@ -1,8 +1,8 @@
 import pytest
 
-from integration.streetrace_manager.models import Car
-from integration.streetrace_manager.system import StreetRaceManager
-from integration.streetrace_manager import (
+from integration.code.models import Car
+from integration.code.system import StreetRaceManager
+from integration.code import (
     crew_management,
     inventory,
     maintenance,

@@ -125,6 +125,29 @@ def _iter_dicts(value: Any) -> Iterable[dict]:
                         yield item
 
 
+def _collect_int_ids(payload: Any, keys: tuple[str, ...], *, limit: int) -> list[int]:
+    ids: list[int] = []
+    seen: set[int] = set()
+    for row in _iter_dicts(payload):
+        for key in keys:
+            if key in row:
+                value = _extract_first_int(row.get(key))
+                if value is not None and value > 0 and value not in seen:
+                    seen.add(value)
+                    ids.append(value)
+                    if len(ids) >= limit:
+                        return ids
+    return ids
+
+
+def _extract_stock(value: dict) -> Optional[int]:
+    for key in ("stock", "stock_quantity"):
+        v = value.get(key)
+        if isinstance(v, int):
+            return v
+    return None
+
+
 @pytest.fixture(scope="session")
 def qc_user_id(qc: QuickCartClient) -> int:
     """Discover a valid user id via admin endpoint (does not require X-User-ID)."""
@@ -147,6 +170,19 @@ def qc_user_id(qc: QuickCartClient) -> int:
 
 
 @pytest.fixture(scope="session")
+def qc_user_ids(qc: QuickCartClient) -> list[int]:
+    """Discover a few valid user ids for parameterized coverage."""
+    resp = qc.request("GET", "/api/v1/admin/users")
+    if resp.status_code != 200:
+        raise RuntimeError(f"admin/users failed status={resp.status_code} text={resp.text[:300]!r}")
+    payload = qc.get_json(resp)
+    ids = _collect_int_ids(payload, ("user_id", "id"), limit=5)
+    if not ids:
+        raise RuntimeError("Could not discover any user ids")
+    return ids
+
+
+@pytest.fixture(scope="session")
 def qc_product(qc: QuickCartClient) -> dict:
     """Pick a product from admin/products to avoid guessing ids."""
     resp = qc.request("GET", "/api/v1/admin/products")
@@ -156,7 +192,7 @@ def qc_product(qc: QuickCartClient) -> dict:
     payload = qc.get_json(resp)
     for row in _iter_dicts(payload):
         # Try to pick something that looks purchasable and has stock.
-        stock = row.get("stock")
+        stock = _extract_stock(row)
         active = row.get("active") if "active" in row else row.get("is_active")
         if isinstance(stock, int) and stock > 0:
             if active is None or active is True:
@@ -167,6 +203,25 @@ def qc_product(qc: QuickCartClient) -> dict:
         return row
 
     raise RuntimeError("No products found in admin/products")
+
+
+@pytest.fixture(scope="session")
+def qc_products(qc: QuickCartClient) -> list[dict]:
+    """Return a small list of products from admin/products for broader tests."""
+    resp = qc.request("GET", "/api/v1/admin/products")
+    if resp.status_code != 200:
+        raise RuntimeError(f"admin/products failed status={resp.status_code} text={resp.text[:300]!r}")
+    payload = qc.get_json(resp)
+
+    products: list[dict] = []
+    for row in _iter_dicts(payload):
+        products.append(row)
+        if len(products) >= 10:
+            break
+
+    if not products:
+        raise RuntimeError("No products found in admin/products")
+    return products
 
 
 @pytest.fixture(scope="session")

@@ -1,6 +1,6 @@
 """Module defining the Player class,
  which represents a single player in the Monopoly game."""
-from config import STARTING_BALANCE, BOARD_SIZE, GO_SALARY, JAIL_POSITION
+from .config import STARTING_BALANCE, BOARD_SIZE, GO_SALARY, JAIL_POSITION
 
 class Player:
     """Represents a single player in a MoneyPoly game."""
